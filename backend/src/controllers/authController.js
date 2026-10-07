@@ -2,32 +2,41 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { sendWelcomeEmail } = require('../services/emailService');
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const {
+  normalizeEmail,
+  isValidEmail,
+} = require('../utils/validation');
 
 async function register(req, res) {
-  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const name = String(req.body?.name || '').trim();
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
 
-  if (!name || !email || !password) {
+  if (!name) {
     return res.status(400).json({
       success: false,
-      message: 'Name, email, and password are required',
+      message: 'Name is required.',
     });
   }
 
-  if (name.length > 100 || email.length > 255 || !emailPattern.test(email)) {
+  if (name.length > 100) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide a valid name and email',
+      message: 'Name cannot exceed 100 characters.',
+    });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please enter a valid email address.',
     });
   }
 
   if (password.length < 8) {
     return res.status(400).json({
       success: false,
-      message: 'Password must be at least 8 characters long',
+      message: 'Use a password with at least 8 characters.',
     });
   }
 
@@ -81,20 +90,20 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
 
-  if (!email || !password) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({
       success: false,
-      message: 'Email and password are required',
+      message: 'Please enter a valid email address.',
     });
   }
 
-  if (!emailPattern.test(email)) {
+  if (!password) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide a valid email',
+      message: 'Password is required.',
     });
   }
 

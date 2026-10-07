@@ -20,10 +20,13 @@ export default function Login() {
     event.preventDefault()
     setError('')
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Enter a valid email address.')
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@gmail\.com$/.test(normalizedEmail)) {
+      setError('Please enter a valid Gmail address.')
       return
     }
+
     if (!password) {
       setError('Enter your password.')
       return
@@ -32,8 +35,9 @@ export default function Login() {
     if (submittingRef.current) return
     submittingRef.current = true
     setSubmitting(true)
+
     try {
-      await login({ email: email.trim(), password })
+      await login({ email: normalizedEmail, password })
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true })
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Unable to sign in. Please try again.'))

@@ -24,7 +24,13 @@ export default function Register() {
     setSuccess('')
 
     if (!form.name.trim()) return setError('Enter your name.')
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return setError('Enter a valid email address.')
+
+    const normalizedEmail = form.email.trim().toLowerCase()
+
+    if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@gmail\.com$/.test(normalizedEmail)) {
+      return setError('Please enter a valid Gmail address.')
+    }
+
     if (form.password.length < 8) return setError('Use at least 8 characters for your password.')
     if (form.password !== form.confirmPassword) return setError('Your passwords do not match.')
 
@@ -32,7 +38,7 @@ export default function Register() {
     submittingRef.current = true
     setSubmitting(true)
     try {
-      await register({ name: form.name.trim(), email: form.email.trim(), password: form.password })
+      await register({ name: form.name.trim(), email: normalizedEmail, password: form.password })
       const notice = 'Your Taskora account is ready. Sign in to start organizing your work.'
       setSuccess(notice)
       navigate('/login', { replace: true, state: { notice } })
