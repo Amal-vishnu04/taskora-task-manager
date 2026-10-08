@@ -30,7 +30,7 @@ async function sendWelcomeEmail({ name, email }) {
                 <h1 style="margin:0 0 20px;font-size:26px;line-height:1.3;color:#1d2b36;">Welcome, ${greetingName}!</h1>
                 <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Your TaskFlow account is ready.</p>
                 <p style="margin:0 0 26px;font-size:16px;line-height:1.6;color:#53636f;">TaskFlow helps you organize your work, keep track of priorities, and stay on top of your tasks.</p>
-                <a href="http://localhost:5173" style="display:inline-block;padding:13px 20px;border-radius:5px;background-color:#176b63;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Start Managing Tasks</a>
+                <a href="${process.env.FRONTEND_URL}" style="display:inline-block;padding:13px 20px;border-radius:5px;background-color:#176b63;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Start Managing Tasks</a>
               </td>
             </tr>
             <tr>
