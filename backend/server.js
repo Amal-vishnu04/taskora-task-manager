@@ -7,7 +7,7 @@ const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
   console.log(`Taskora API listening on port ${port}`);
-  if (!process.env.VERCEL) {
+  if (!process.env.VERCEL && process.env.REMINDER_SCHEDULER === 'true') {
     startReminderScheduler();
   }
 });

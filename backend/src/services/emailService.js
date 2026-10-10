@@ -211,9 +211,107 @@ async function sendTaskImageUploadedEmail({ name, email, task, taskUrl }) {
   });
 }
 
+function reminderTimeZone() {
+  const zone = process.env.REMINDER_TIMEZONE || 'UTC';
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    return zone;
+  } catch {
+    return 'UTC';
+  }
+}
+
+function plural(value, unit) {
+  return `${value} ${unit}${value === 1 ? '' : 's'}`;
+}
+
+function describeRelativeTime(date, nowMs = Date.now()) {
+  const minutes = Math.round(Math.abs(date.getTime() - nowMs) / 60000);
+  let amount;
+  if (minutes < 60) {
+    amount = plural(Math.max(minutes, 1), 'minute');
+  } else if (minutes < 1440) {
+    amount = plural(Math.round(minutes / 60), 'hour');
+  } else {
+    amount = plural(Math.round(minutes / 1440), 'day');
+  }
+  return date.getTime() >= nowMs ? `in about ${amount}` : `${amount} ago`;
+}
+
+async function sendTaskReminderEmail({ name, email, task, kind = 'due_soon', taskUrl }) {
+  const overdue = kind === 'overdue';
+  const greetingName = escapeHtml(name || 'there');
+  const taskTitle = escapeHtml(task.title);
+  const taskDescription = task.description
+    ? escapeHtml(task.description)
+    : '<span style="color:#9aa7b0;">No description provided.</span>';
+  const badge = STATUS_BADGES[task.status] || STATUS_BADGES.pending;
+  const due = new Date(task.dueDate);
+  const dueValid = !Number.isNaN(due.getTime());
+  const dueLabel = dueValid
+    ? `${new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: reminderTimeZone(),
+      timeZoneName: 'short',
+    }).format(due)} (${describeRelativeTime(due)})`
+    : 'No deadline';
+  const subjectTitle = String(task.title).replace(/[\r\n]+/g, ' ').trim().slice(0, 180);
+  const accent = overdue ? '#c0392b' : '#d68910';
+  const headline = overdue ? 'This task is overdue' : 'This task is due soon';
+  const intro = overdue
+    ? 'The deadline for this task has passed and it is not completed yet.'
+    : 'This task is due within the next 24 hours.';
+  const openTaskButton = taskUrl
+    ? `<a href="${escapeHtml(taskUrl)}" style="display:inline-block;padding:14px 24px;border-radius:8px;background-color:#111111;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Open Task</a>`
+    : '';
+
+  return sendEmailJs({
+    toEmail: email,
+    subject: overdue ? `Overdue: "${subjectTitle}"` : `Reminder: "${subjectTitle}" is due soon`,
+    html: `
+      <!doctype html>
+      <html lang="en">
+        <body style="margin:0;padding:32px 12px;background-color:#eef2f4;font-family:Arial,Helvetica,sans-serif;color:#23313d;">
+          <table role="presentation" align="center" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dde5ea;">
+            <tr>
+              <td style="padding:22px 32px;background-color:#111111;color:#ffffff;font-size:20px;font-weight:700;">Taskora</td>
+            </tr>
+            <tr>
+              <td style="height:4px;background-color:${accent};font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 8px;">
+                <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.08em;color:${accent};">${overdue ? 'OVERDUE' : 'DUE SOON'}</p>
+                <h1 style="margin:0 0 12px;font-size:26px;line-height:1.3;color:#1d2b36;">${taskTitle}</h1>
+                <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#53636f;">Hi ${greetingName}, ${intro}</p>
+                <table role="presentation" style="width:100%;border-collapse:collapse;border-top:1px solid #eef2f4;">
+                  ${detailRow('STATUS', `<span style="display:inline-block;padding:4px 12px;border-radius:999px;background-color:${badge.background};color:${badge.color};font-size:13px;font-weight:700;">${badge.label}</span>`)}
+                  ${detailRow('DUE', escapeHtml(dueLabel))}
+                  ${detailRow('DESCRIPTION', taskDescription)}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 32px;">${openTaskButton}</td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;background-color:#f7f9fa;border-top:1px solid #eef2f4;font-size:12px;line-height:1.5;color:#77858e;">${headline}. This is an automated email from Taskora. Please do not reply to this message.</td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+  });
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendDueDateReminderEmail,
   sendTaskImageUploadedEmail,
+  sendTaskReminderEmail,
   verifyEmailConfiguration,
 };
