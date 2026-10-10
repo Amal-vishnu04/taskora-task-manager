@@ -50,11 +50,10 @@ export default function Dashboard() {
   const deletingRef = useRef(false)
   const [toast, setToast] = useState(null)
 
-  useEffect(() => {
-    if (!requestedTaskId || loading) return
-    const match = tasks.find(task => String(task.id) === requestedTaskId)
-    if (match) setDetailsTask(match)
-  }, [requestedTaskId, loading, tasks])
+  const requestedTask = requestedTaskId && !loading
+    ? tasks.find(task => String(task.id) === requestedTaskId) || null
+    : null
+  const activeDetailsTask = detailsTask || requestedTask
 
   function closeDetails() {
     setDetailsTask(null)
@@ -283,9 +282,9 @@ export default function Dashboard() {
         onClose={() => { setFormOpen(false); setEditingTask(null) }}
         onSave={saveTask}
       />}
-      {detailsTask && <TaskDetailsModal
-        key={detailsTask.id}
-        task={detailsTask}
+      {activeDetailsTask && <TaskDetailsModal
+        key={activeDetailsTask.id}
+        task={activeDetailsTask}
         onClose={closeDetails}
         onEdit={task => { closeDetails(); startEdit(task) }}
       />}

@@ -73,6 +73,11 @@ export default function AnalyticsSection({ refreshKey, onOpenTask }) {
     return () => { active = false }
   }, [days, refreshKey, reloadKey])
 
+  useEffect(() => {
+    const timer = setInterval(() => setReloadKey(key => key + 1), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
   function retry() {
     setState(current => ({ ...current, status: 'loading' }))
     setReloadKey(key => key + 1)
