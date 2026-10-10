@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { deleteCloudinaryImage } = require('../services/cloudinaryService');
 const { getTaskCloudinaryPublicId } = require('../utils/cloudinaryUtils');
 const { notifyImageUploaded } = require('../services/taskNotificationService');
+const { logActivity, buildUpdateEvents } = require('../services/activityService');
 
 const allowedStatuses = new Set(['pending', 'in_progress', 'completed']);
 const taskColumns = 'id, title, description, status, due_date AS "dueDate", image_url AS "imageUrl", owner_id AS "ownerId", created_at AS "createdAt", updated_at AS "updatedAt"';
@@ -104,14 +105,23 @@ async function createTask(req, res) {
       [title, description, status, dueDate.value, imageUrl ?? null, req.userId],
     );
 
-    if (result.rows[0].imageUrl) {
-      await notifyImageUploaded({ task: result.rows[0], userId: req.userId });
+    const createdTask = result.rows[0];
+    await logActivity({ userId: req.userId, taskId: createdTask.id, taskTitle: createdTask.title, action: 'task_created' });
+    if (createdTask.status === 'completed') {
+      await logActivity({ userId: req.userId, taskId: createdTask.id, taskTitle: createdTask.title, action: 'task_completed', details: { from: null } });
+    }
+    if (createdTask.imageUrl) {
+      await logActivity({ userId: req.userId, taskId: createdTask.id, taskTitle: createdTask.title, action: 'image_uploaded' });
+    }
+
+    if (createdTask.imageUrl) {
+      await notifyImageUploaded({ task: createdTask, userId: req.userId });
     }
 
     return res.status(201).json({
       success: true,
       message: 'Task created successfully',
-      task: result.rows[0],
+      task: createdTask,
     });
   } catch {
     return res.status(500).json({
@@ -234,7 +244,7 @@ async function updateTask(req, res) {
     await client.query('BEGIN');
 
     const existingTask = await client.query(
-      'SELECT image_url FROM tasks WHERE id = $1 AND owner_id = $2 FOR UPDATE',
+      'SELECT title, description, status, due_date AS "dueDate", image_url FROM tasks WHERE id = $1 AND owner_id = $2 FOR UPDATE',
       [taskId, req.userId],
     );
 
@@ -247,6 +257,7 @@ async function updateTask(req, res) {
     }
 
     const previousImageUrl = existingTask.rows[0].image_url;
+    const previousTask = existingTask.rows[0];
     const result = await client.query(
       `UPDATE tasks
        SET title = CASE WHEN $3::boolean THEN $4::varchar ELSE title END,
@@ -301,14 +312,27 @@ async function updateTask(req, res) {
       }
     }
 
+    const updatedTask = result.rows[0];
+    for (const event of buildUpdateEvents(previousTask, updatedTask)) {
+      await logActivity({ userId: req.userId, taskId: updatedTask.id, taskTitle: updatedTask.title, ...event });
+    }
+    if (imageUrlProvided && imageUrl !== previousImageUrl) {
+      await logActivity({
+        userId: req.userId,
+        taskId: updatedTask.id,
+        taskTitle: updatedTask.title,
+        action: typeof imageUrl === 'string' ? 'image_uploaded' : 'image_removed',
+      });
+    }
+
     if (imageUrlProvided && typeof imageUrl === 'string' && imageUrl !== previousImageUrl) {
-      await notifyImageUploaded({ task: result.rows[0], userId: req.userId });
+      await notifyImageUploaded({ task: updatedTask, userId: req.userId });
     }
 
     return res.status(200).json({
       success: true,
       message: 'Task updated successfully',
-      task: result.rows[0],
+      task: updatedTask,
     });
   } catch {
     if (client) {
@@ -331,7 +355,7 @@ async function deleteTask(req, res) {
 
   try {
     const result = await pool.query(
-      'DELETE FROM tasks WHERE id = $1 AND owner_id = $2',
+      'DELETE FROM tasks WHERE id = $1 AND owner_id = $2 RETURNING title',
       [taskId, req.userId],
     );
 
@@ -341,6 +365,13 @@ async function deleteTask(req, res) {
         message: 'Task not found',
       });
     }
+
+    await logActivity({
+      userId: req.userId,
+      taskId: null,
+      taskTitle: result.rows?.[0]?.title,
+      action: 'task_deleted',
+    });
 
     return res.status(200).json({
       success: true,

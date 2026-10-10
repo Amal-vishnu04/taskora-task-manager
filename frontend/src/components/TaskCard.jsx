@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarDays, Check, Clock3, Pencil, Trash2 } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Check, Clock3, Eye, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { isTaskOverdue } from '../utils/taskDates'
 
@@ -21,7 +21,7 @@ function formatDueDate(value) {
   }).format(date)
 }
 
-export default function TaskCard({ task, nowTimestamp, onEdit, onDelete }) {
+export default function TaskCard({ task, nowTimestamp, onOpen, onEdit, onDelete }) {
   const [failedImageUrl, setFailedImageUrl] = useState('')
   const status = statusLabels[task.status] ? task.status : 'pending'
   const overdue = isTaskOverdue(task, nowTimestamp)
@@ -35,6 +35,9 @@ export default function TaskCard({ task, nowTimestamp, onEdit, onDelete }) {
           <span className="status-indicator" />{statusLabels[status]}
         </span>
         <div className="task-actions">
+          <button className="task-action-button" onClick={() => onOpen(task)} aria-label={`View details for ${task.title}`} title="View details">
+            <Eye size={16} />
+          </button>
           <button className="task-action-button" onClick={() => onEdit(task)} aria-label={`Edit ${task.title}`} title="Edit task">
             <Pencil size={16} />
           </button>

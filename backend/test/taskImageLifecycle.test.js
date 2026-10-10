@@ -1,3 +1,11 @@
+﻿const activityServicePath = require.resolve('../src/services/activityService');
+require.cache[activityServicePath] = {
+  id: activityServicePath,
+  filename: activityServicePath,
+  loaded: true,
+  exports: { logActivity: async () => true, buildUpdateEvents: () => [] },
+};
+
 const notificationServicePath = require.resolve('../src/services/taskNotificationService');
 require.cache[notificationServicePath] = {
   id: notificationServicePath,
@@ -51,8 +59,19 @@ function stubTaskUpdate(options = {}) {
   const client = {
     async query(sql, params = []) {
       calls.push({ sql, params });
-      if (sql === 'SELECT image_url FROM tasks WHERE id = $1 AND owner_id = $2 FOR UPDATE') {
-        return oldImage === undefined ? { rowCount: 0, rows: [] } : { rowCount: 1, rows: [{ image_url: oldImage }] };
+           if (sql.includes('FROM tasks WHERE id = $1 AND owner_id = $2 FOR UPDATE')) {
+        return oldImage === undefined
+          ? { rowCount: 0, rows: [] }
+          : {
+            rowCount: 1,
+            rows: [{
+              title: 'Old title',
+              description: null,
+              status: 'pending',
+              dueDate: null,
+              image_url: oldImage,
+            }],
+          };
       }
       if (sql.includes('UPDATE tasks')) {
         if (updateFails) throw new Error('database failure');
@@ -170,7 +189,7 @@ test('owner-scoped lookup prevents updates to another user task', async () => {
 
   assert.equal(response.statusCode, 404);
   assert.equal(calls.some(call => call.sql.includes('UPDATE tasks')), false);
-  assert.deepEqual(calls.find(call => call.sql.startsWith('SELECT image_url')).params, [42, 99]);
+    assert.deepEqual(calls.find(call => call.sql.includes('FROM tasks WHERE id = $1 AND owner_id = $2 FOR UPDATE')).params, [42, 99]);
 });
 
 test('creates tasks with and without an image using the authenticated owner ID', async (context) => {

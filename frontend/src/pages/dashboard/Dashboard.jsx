@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, CalendarDays, Plus, Search, X } from 'lucide-react'
 import { getApiErrorMessage } from '../../api/errors'
 import api from '../../api/axios'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import EmptyTasks from '../../components/EmptyTasks'
 import StatCard from '../../components/StatCard'
 import TaskCard from '../../components/TaskCard'
 import TaskFormModal from '../../components/TaskFormModal'
+import TaskDetailsModal from '../../components/TaskDetailsModal'
 import Toast from '../../components/Toast'
 import { matchesDueDateFilter } from '../../utils/taskDates'
 
@@ -41,9 +42,23 @@ export default function Dashboard() {
   const [editingTask, setEditingTask] = useState(null)
   const [saving, setSaving] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState(null)
+  const [detailsTask, setDetailsTask] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTaskId = searchParams.get('task')
   const [deleting, setDeleting] = useState(false)
   const deletingRef = useRef(false)
   const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    if (!requestedTaskId || loading) return
+    const match = tasks.find(task => String(task.id) === requestedTaskId)
+    if (match) setDetailsTask(match)
+  }, [requestedTaskId, loading, tasks])
+
+  function closeDetails() {
+    setDetailsTask(null)
+    if (requestedTaskId) setSearchParams({}, { replace: true })
+  }
 
   useEffect(() => {
     let active = true
@@ -214,7 +229,7 @@ export default function Dashboard() {
             </label>
               <button className="primary-button create-task-button" onClick={startCreate}>
                 <Plus size={17} /><span>Create Task</span>
-            </button>
+              </button>
           </div>
         </div>
 
@@ -246,7 +261,7 @@ export default function Dashboard() {
         {!loading && !error && filteredTasks.length > 0 && (
           <div className="task-grid">
             {filteredTasks.map(task => (
-              <TaskCard key={task.id} task={task} nowTimestamp={nowTimestamp} onEdit={startEdit} onDelete={setTaskToDelete} />
+              <TaskCard key={task.id} task={task} nowTimestamp={nowTimestamp} onOpen={setDetailsTask} onEdit={startEdit} onDelete={setTaskToDelete} />
             ))}
           </div>
         )}
@@ -258,6 +273,12 @@ export default function Dashboard() {
         saving={saving}
         onClose={() => { setFormOpen(false); setEditingTask(null) }}
         onSave={saveTask}
+      />}
+      {detailsTask && <TaskDetailsModal
+        key={detailsTask.id}
+        task={detailsTask}
+        onClose={closeDetails}
+        onEdit={task => { closeDetails(); startEdit(task) }}
       />}
       <ConfirmDialog task={taskToDelete} busy={deleting} onCancel={() => setTaskToDelete(null)} onConfirm={deleteTask} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
