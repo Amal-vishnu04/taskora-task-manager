@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -18,7 +18,7 @@ app.use('/api/internal', internalRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'TaskFlow API is running',
+    message: 'Taskora API is running',
   });
 });
 

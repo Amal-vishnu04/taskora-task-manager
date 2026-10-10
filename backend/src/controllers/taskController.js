@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { deleteCloudinaryImage } = require('../services/cloudinaryService');
 const { getTaskCloudinaryPublicId } = require('../utils/cloudinaryUtils');
+const { notifyImageUploaded } = require('../services/taskNotificationService');
 
 const allowedStatuses = new Set(['pending', 'in_progress', 'completed']);
 const taskColumns = 'id, title, description, status, due_date AS "dueDate", image_url AS "imageUrl", owner_id AS "ownerId", created_at AS "createdAt", updated_at AS "updatedAt"';
@@ -102,6 +103,10 @@ async function createTask(req, res) {
        RETURNING ${taskColumns}`,
       [title, description, status, dueDate.value, imageUrl ?? null, req.userId],
     );
+
+    if (result.rows[0].imageUrl) {
+      await notifyImageUploaded({ task: result.rows[0], userId: req.userId });
+    }
 
     return res.status(201).json({
       success: true,
@@ -294,6 +299,10 @@ async function updateTask(req, res) {
           console.error('Cloudinary task image cleanup failed', { taskId });
         }
       }
+    }
+
+    if (imageUrlProvided && typeof imageUrl === 'string' && imageUrl !== previousImageUrl) {
+      await notifyImageUploaded({ task: result.rows[0], userId: req.userId });
     }
 
     return res.status(200).json({

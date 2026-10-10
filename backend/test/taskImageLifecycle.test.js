@@ -1,3 +1,11 @@
+const notificationServicePath = require.resolve('../src/services/taskNotificationService');
+require.cache[notificationServicePath] = {
+  id: notificationServicePath,
+  filename: notificationServicePath,
+  loaded: true,
+  exports: { notifyImageUploaded: async () => false },
+};
+
 const assert = require('node:assert/strict');
 const { afterEach, test } = require('node:test');
 const { once } = require('node:events');
