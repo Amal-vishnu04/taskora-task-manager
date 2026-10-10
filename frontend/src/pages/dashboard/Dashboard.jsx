@@ -10,6 +10,7 @@ import TaskCard from '../../components/TaskCard'
 import TaskFormModal from '../../components/TaskFormModal'
 import TaskDetailsModal from '../../components/TaskDetailsModal'
 import AnalyticsSection from '../../components/AnalyticsSection'
+import { getSubtaskSummary } from '../../api/subtasks'
 import Toast from '../../components/Toast'
 import { matchesDueDateFilter } from '../../utils/taskDates'
 
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const [detailsTask, setDetailsTask] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTaskId = searchParams.get('task')
+  const [subtaskSummary, setSubtaskSummary] = useState({})
   const [deleting, setDeleting] = useState(false)
   const deletingRef = useRef(false)
   const [toast, setToast] = useState(null)
@@ -55,9 +57,24 @@ export default function Dashboard() {
     : null
   const activeDetailsTask = detailsTask || requestedTask
 
+  useEffect(() => {
+    let active = true
+    getSubtaskSummary()
+      .then(summary => { if (active) setSubtaskSummary(summary) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [tasks])
+
   function closeDetails() {
     setDetailsTask(null)
     if (requestedTaskId) setSearchParams({}, { replace: true })
+  }
+
+  function updateSubtaskSummary(taskId, items) {
+    setSubtaskSummary(current => ({
+      ...current,
+      [taskId]: { total: items.length, completed: items.filter(item => item.completed).length },
+    }))
   }
 
   function openTaskById(taskId) {
@@ -269,7 +286,7 @@ export default function Dashboard() {
         {!loading && !error && filteredTasks.length > 0 && (
           <div className="task-grid">
             {filteredTasks.map(task => (
-              <TaskCard key={task.id} task={task} nowTimestamp={nowTimestamp} onOpen={setDetailsTask} onEdit={startEdit} onDelete={setTaskToDelete} />
+              <TaskCard key={task.id} task={task} nowTimestamp={nowTimestamp} subtaskSummary={subtaskSummary[task.id]} onOpen={setDetailsTask} onEdit={startEdit} onDelete={setTaskToDelete} />
             ))}
           </div>
         )}
@@ -287,6 +304,7 @@ export default function Dashboard() {
         task={activeDetailsTask}
         onClose={closeDetails}
         onEdit={task => { closeDetails(); startEdit(task) }}
+        onSubtasksChange={updateSubtaskSummary}
       />}
       <ConfirmDialog task={taskToDelete} busy={deleting} onCancel={() => setTaskToDelete(null)} onConfirm={deleteTask} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />

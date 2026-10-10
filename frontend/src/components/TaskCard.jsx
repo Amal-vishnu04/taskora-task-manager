@@ -21,7 +21,7 @@ function formatDueDate(value) {
   }).format(date)
 }
 
-export default function TaskCard({ task, nowTimestamp, onOpen, onEdit, onDelete }) {
+export default function TaskCard({ task, nowTimestamp, subtaskSummary, onOpen, onEdit, onDelete }) {
   const [failedImageUrl, setFailedImageUrl] = useState('')
   const status = statusLabels[task.status] ? task.status : 'pending'
   const overdue = isTaskOverdue(task, nowTimestamp)
@@ -65,6 +65,14 @@ export default function TaskCard({ task, nowTimestamp, onOpen, onEdit, onDelete 
       <div className="task-card-copy">
         <h3>{task.title}</h3>
         <p>{task.description || 'No description provided.'}</p>
+        {subtaskSummary && subtaskSummary.total > 0 && (
+          <div className="subtask-mini">
+            <div className="subtask-bar" aria-hidden="true">
+              <span style={{ width: `${Math.round((subtaskSummary.completed / subtaskSummary.total) * 100)}%` }} />
+            </div>
+            <small>{subtaskSummary.completed} of {subtaskSummary.total} subtasks completed</small>
+          </div>
+        )}
       </div>
       <div className="task-card-footer">
         <span className="task-due-label"><CalendarDays size={15} /> Due date</span>

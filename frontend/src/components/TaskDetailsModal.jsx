@@ -2,6 +2,7 @@
 import { AlertTriangle, CalendarDays, Check, CircleDot, Clock3, ImagePlus, Pencil, Plus, X } from 'lucide-react'
 import { getTaskActivity } from '../api/activity'
 import { getApiErrorMessage } from '../api/errors'
+import SubtaskChecklist from './SubtaskChecklist'
 import { useDialogFocus } from './useDialogFocus'
 
 const statusLabels = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' }
@@ -47,17 +48,23 @@ function describeActivity(item) {
       }
     case 'image_uploaded': return { label: 'Image uploaded', Icon: ImagePlus, tone: 'image' }
     case 'image_removed': return { label: 'Image removed', Icon: X, tone: 'reopened' }
+    case 'subtask_created': return { label: `Subtask added: "${details.title || ''}"`, Icon: Plus, tone: 'created' }
+    case 'subtask_completed': return { label: `Subtask completed: "${details.title || ''}"`, Icon: Check, tone: 'completed' }
+    case 'subtask_reopened': return { label: `Subtask reopened: "${details.title || ''}"`, Icon: CircleDot, tone: 'reopened' }
+    case 'subtask_updated': return { label: `Subtask renamed: "${details.title || ''}"`, Icon: Pencil, tone: 'updated' }
+    case 'subtask_deleted': return { label: `Subtask deleted: "${details.title || ''}"`, Icon: X, tone: 'reopened' }
     default: return { label: 'Activity recorded', Icon: CircleDot, tone: 'created' }
   }
 }
 
-export default function TaskDetailsModal({ task, onClose, onEdit }) {
+export default function TaskDetailsModal({ task, onClose, onEdit, onSubtasksChange }) {
   const dialogRef = useDialogFocus(true)
   const [now] = useState(() => Date.now())
   const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [imageFailed, setImageFailed] = useState(false)
+  const [activityVersion, setActivityVersion] = useState(0)
   const status = statusLabels[task.status] ? task.status : 'pending'
   const imageUrl = task.imageUrl || task.image_url
   const dueTime = task.dueDate ? Date.parse(task.dueDate) : NaN
@@ -72,7 +79,7 @@ export default function TaskDetailsModal({ task, onClose, onEdit }) {
       })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [task.id])
+  }, [task.id, activityVersion])
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -119,6 +126,14 @@ export default function TaskDetailsModal({ task, onClose, onEdit }) {
 
         <h3 className="td-section-title">Description</h3>
         <p className="td-description">{task.description || 'No description provided.'}</p>
+
+        <SubtaskChecklist
+          taskId={task.id}
+          onChanged={items => {
+            setActivityVersion(version => version + 1)
+            onSubtasksChange?.(task.id, items)
+          }}
+        />
 
         <h3 className="td-section-title">Activity {!loading && !error && <span className="td-count">{activity.length}</span>}</h3>
         {loading && <p className="td-note" role="status">Loading activity…</p>}

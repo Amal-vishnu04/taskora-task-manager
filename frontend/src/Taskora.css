@@ -417,3 +417,21 @@ a { color: inherit; }
 .an-deadlines button:hover, .an-deadlines button:focus-visible { background: rgba(128, 128, 128, 0.1); }
 .an-deadline-title { font-weight: 600; overflow-wrap: anywhere; }
 .an-deadline-meta { font-size: 0.8rem; opacity: 0.65; }
+
+/* Subtask checklist */
+.subtask-progress { margin-bottom: 12px; }
+.subtask-progress-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; }
+.subtask-bar { height: 8px; border-radius: 999px; background: rgba(128, 128, 128, 0.2); overflow: hidden; }
+.subtask-bar span { display: block; height: 100%; border-radius: inherit; background: #1f9d55; transition: width 0.25s ease; }
+.subtask-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.subtask-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(128, 128, 128, 0.22); border-radius: 10px; }
+.subtask-check { flex: none; width: 20px; height: 20px; padding: 0; border-radius: 6px; border: 2px solid currentColor; background: transparent; color: inherit; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0.8; }
+.subtask-done .subtask-check { background: #1f9d55; border-color: #1f9d55; color: #ffffff; opacity: 1; }
+.subtask-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.subtask-done .subtask-title { text-decoration: line-through; opacity: 0.6; }
+.subtask-edit-input { flex: 1; min-width: 0; padding: 6px 10px; }
+.subtask-actions { display: flex; gap: 4px; flex: none; }
+.subtask-add { display: flex; gap: 8px; }
+.subtask-add .text-input { flex: 1; min-width: 0; }
+.subtask-mini { margin-top: 10px; }
+.subtask-mini small { display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.65; }

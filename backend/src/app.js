@@ -7,6 +7,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const internalRoutes = require('./routes/internalRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const subtaskRoutes = require('./routes/subtaskRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/internal', internalRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api', subtaskRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
