@@ -6,6 +6,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const internalRoutes = require('./routes/internalRoutes');
 const activityRoutes = require('./routes/activityRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/internal', internalRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

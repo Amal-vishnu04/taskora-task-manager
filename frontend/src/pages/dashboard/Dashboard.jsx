@@ -9,6 +9,7 @@ import StatCard from '../../components/StatCard'
 import TaskCard from '../../components/TaskCard'
 import TaskFormModal from '../../components/TaskFormModal'
 import TaskDetailsModal from '../../components/TaskDetailsModal'
+import AnalyticsSection from '../../components/AnalyticsSection'
 import Toast from '../../components/Toast'
 import { matchesDueDateFilter } from '../../utils/taskDates'
 
@@ -58,6 +59,11 @@ export default function Dashboard() {
   function closeDetails() {
     setDetailsTask(null)
     if (requestedTaskId) setSearchParams({}, { replace: true })
+  }
+
+  function openTaskById(taskId) {
+    const match = tasks.find(task => task.id === taskId)
+    if (match) setDetailsTask(match)
   }
 
   useEffect(() => {
@@ -113,6 +119,7 @@ export default function Dashboard() {
       && matchesDueDateFilter(task, dueDateFilter, nowTimestamp)
   })
   const filtersActive = Boolean(normalizedQuery || statusFilter || dueDateFilter)
+  const analyticsKey = tasks.map(task => `${task.id}:${task.status}:${task.dueDate || ''}`).join('|')
 
   function clearFilters() {
     setSearchQuery('')
@@ -190,6 +197,8 @@ export default function Dashboard() {
         <StatCard kind="in_progress" label="In Progress" value={loading ? '—' : statistics.in_progress} />
         <StatCard kind="completed" label="Completed" value={loading ? '—' : statistics.completed} />
       </section>
+
+      {!loading && !error && <AnalyticsSection refreshKey={analyticsKey} onOpenTask={openTaskById} />}
 
       <section className="task-section" id="tasks" aria-labelledby="tasks-heading">
         <div className="tasks-toolbar">
