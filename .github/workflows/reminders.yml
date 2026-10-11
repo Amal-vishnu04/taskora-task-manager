@@ -1,0 +1,26 @@
+﻿name: Send task reminders
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: task-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger reminder processing
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          REMINDER_CRON_SECRET: ${{ secrets.REMINDER_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            -X POST "$BACKEND_URL/api/internal/reminders/process" \
+            -H "Authorization: Bearer $REMINDER_CRON_SECRET"

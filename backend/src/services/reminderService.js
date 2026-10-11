@@ -1,7 +1,7 @@
 ﻿const pool = require('../config/db');
 const { sendTaskReminderEmail } = require('./emailService');
 
-const REMINDER_BATCH_LIMIT = 100;
+const REMINDER_BATCH_LIMIT = 20;
 
 // due_soon: due within the next 24h. overdue: became overdue within the last 24h.
 // A task is skipped when a notification already exists for the same type and due date.
