@@ -5,9 +5,9 @@ import { getAnalytics } from '../api/analytics'
 import { getApiErrorMessage } from '../api/errors'
 
 const STATUS_META = {
-  pending: { label: 'Pending', color: '#d68910' },
-  in_progress: { label: 'In Progress', color: '#2d6cdf' },
-  completed: { label: 'Completed', color: '#1f9d55' },
+  pending: { label: 'Pending', opacity: 0.25 },
+  in_progress: { label: 'In Progress', opacity: 0.55 },
+  completed: { label: 'Completed', opacity: 1 },
 }
 
 const RANGE_OPTIONS = [7, 14, 30]
@@ -89,7 +89,7 @@ export default function AnalyticsSection({ refreshKey, onOpenTask }) {
       key: item.status,
       name: STATUS_META[item.status]?.label || item.status,
       value: item.count,
-      color: STATUS_META[item.status]?.color || '#888',
+      opacity: STATUS_META[item.status]?.opacity ?? 0.5,
     }))
     : []
   const trend = data ? data.completedOverTime.map(item => ({ ...item, label: formatDay(item.date) })) : []
@@ -149,7 +149,7 @@ export default function AnalyticsSection({ refreshKey, onOpenTask }) {
                       <XAxis dataKey="label" tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={18} />
                       <YAxis allowDecimals={false} tick={{ fill: 'currentColor', fontSize: 11 }} tickLine={false} axisLine={false} />
                       <Tooltip cursor={{ fill: 'currentColor', fillOpacity: 0.08 }} content={<ChartTooltip unit="completed" />} />
-                      <Bar dataKey="count" fill="#1f9d55" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                      <Bar dataKey="count" fill="var(--text)" radius={[4, 4, 0, 0]} maxBarSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -163,7 +163,7 @@ export default function AnalyticsSection({ refreshKey, onOpenTask }) {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={distribution} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="88%" paddingAngle={2} stroke="none">
-                        {distribution.map(item => <Cell key={item.key} fill={item.color} />)}
+                        {distribution.map(item => <Cell key={item.key} fill="var(--text)" fillOpacity={item.opacity} />)}
                       </Pie>
                       <Tooltip content={<ChartTooltip unit="tasks" />} />
                     </PieChart>
@@ -173,7 +173,7 @@ export default function AnalyticsSection({ refreshKey, onOpenTask }) {
                 <ul className="an-legend">
                   {distribution.map(item => (
                     <li key={item.key}>
-                      <span className="an-swatch" style={{ background: item.color }} />
+                      <span className="an-swatch" style={{ background: 'var(--text)', opacity: item.opacity }} />
                       <span>{item.name}</span>
                       <strong>{item.value}</strong>
                       <small>{Math.round((item.value / data.total) * 100)}%</small>
